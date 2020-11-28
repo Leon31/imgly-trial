@@ -1,71 +1,115 @@
 import classnames from 'classnames';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { getSelectionEnd, getSelectionStart, getCaretPosition } from "./caret";
 
-const mocksString = 'A string that says something in English so I can tell better if it is breaking or not';
 
-const notOverlaps = {
-  20: {bold: true},
-  25: {bold: false},
-  30: {italic: true},
-  35: {italic: false},
-}
+// Call to fill the first time the storage
 
-const sameRange = {
-  20: {bold: true, italic: true},
-  25: {italic: false, bold: false},
-}
-
-const overlaps = {
-
-}
+// function setMockStorage(text, ranges) {
+//   window.localStorage.setItem('text',JSON.stringify({text, ranges}))
+// }
+// const mocksString = 'A string that says something in English so I can tell better if it is breaking or not';
+// const mockRanges = new Array(mocksString.length-1).fill('');
+// setMockStorage(mocksString,mockRanges); 
 
 function Editor() {
-  const [text, setText] = useState(mocksString);
-  const [ranges, setRanges] = useState(overlaps);
+  const [text, setText] = useState('');
+  const [ranges, setRanges] = useState([]);
+  const [style, setStyle] = useState({})
   const input = useRef();
 
-  function selection (style) {
+  useEffect(() => {
+    const prevText = JSON.parse(window.localStorage.getItem('text'));
+    setText(prevText.text)
+    setRanges(prevText.ranges)
+  },[])
+
+  useEffect(() => {
+    window.localStorage.setItem('text',JSON.stringify({text, ranges}))
+  }, [text, ranges])
+
+  function setStyleSelection (style) {
     const start = getSelectionStart(input.current)
     const end = getSelectionEnd(input.current);
 
-    setRanges(ranges => ({...addRanges(ranges, start, end, style)}))
+    const newRanges = ranges[start] && ranges[start].includes(style)
+      ? removeRanges(ranges, start, end, style)
+      : addRanges(ranges, start, end, style)
+    if (!newRanges) return console.error('Error', 'start:', start, 'end:', end)
+    setRanges([...newRanges]);
   } 
+
+  function selection () {
+    let index = getCaretPosition(input.current);
+    if (!ranges[index]) return setStyle({});
+    const styles = ranges[index].split(' ');
+    setStyle(styles.reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    },{}))
+  }
 
 
   return (
     <>
       <div className="buttons">
-        <button onClick={()=>selection("bold")} ><span className="bold">B</span></button> 
-        <button onClick={()=>selection("italic")}><span className="italic">I</span></button> 
-        <button onClick={()=>selection("underline")}><span className="underline">U</span></button> 
+        <Button setStyleSelection={setStyleSelection} styleName="bold" icon="B" active={style.bold}/> 
+        <Button setStyleSelection={setStyleSelection} styleName="italic" icon="I" active={style.italic}/> 
+        <Button setStyleSelection={setStyleSelection} styleName="underline" icon="U" active={style.underline}/> 
       </div>
-      <div ref={input} className="editor" contentEditable="true" cols="30" rows="10" suppressContentEditableWarning={true}>
+      <div ref={input} onSelect={selection} className="editor" contentEditable="true" cols="30" rows="10" suppressContentEditableWarning={true}>
         {renderText(text, ranges)}
       </div>
     </>
   );
 }
 
+function Button ({styleName, setStyleSelection, icon, active}) {
+  return (
+    <button 
+      style={{background: active ? '#eee' : '#fff'}} 
+      onClick={()=>setStyleSelection(styleName)} >
+        <span className={styleName}>{icon}</span>
+    </button> 
+  )
+}
+
 function addRanges (ranges, s, e, style) {
-  ranges[s] = {...ranges[s], [style]:true};
-  ranges[e] = {...ranges[e], [style]:false};
+  for (let i = s; i < e && i < ranges.length; i++) {
+    const styles = ranges[i].split(' ');
+    const {bold='', italic='', underline=''} = styles.reduce((acc, styleName) => {
+      acc[styleName] = styleName;
+      return acc;
+    },{[style]:style})
+
+    ranges[i] = `${bold} ${italic} ${underline}`;
+  }
+
   return ranges;
 }
 
+function removeRanges (ranges, s, e, style) {
+  for (let i = s; i < e && i < ranges.length; i++) {
+    const styles = ranges[i].split(' ').filter(styleName => styleName !== style);
+    ranges[i] = styles.join(' ');
+  }
+
+  return ranges;
+}
 
 function renderText (text, ranges) {
   let chunk = '';
   const res = [];
-  const open = {};
-  if (ranges[0]) Object.assign(open, ranges[0]);
+  let current = ranges[0];
+
   for (let i = 0; i < text.length; i++) {
     chunk += text[i];
-    if (ranges[i+1]) {
-      const span = <span key={i} className={classnames(open)}>{chunk}</span>
+    
+    if (ranges[i+1] !== current) {
+      const span = <span key={i} className={classnames(ranges[i])}>{chunk}</span>
       res.push(span);
-
-      Object.assign(open, ranges[i+1]);
+      
+      current = ranges[i+1];
       chunk = '';
     }
   }

@@ -1,7 +1,7 @@
 :root {
   --dot-color: #c2c2c2;
   --color: #c2c2c2;
-  --dot-size: 1.5px
+  --dot-size: 1.1px
 }
 
 body {
@@ -14,8 +14,8 @@ body {
   font-size: 1.8em;
   background-image: radial-gradient(var(--dot-color) var(--dot-size), transparent var(--dot-size)),
     radial-gradient(var(--dot-color) var(--dot-size), transparent var(--dot-size));
-  background-position: 0 0, 40px 40px;
-  background-size: 80px 80px; 
+  background-position: 0 0, 25px 25px;
+  background-size: 50px 50px; 
   height: 95vh;
   display: flex;
   justify-content: center;
