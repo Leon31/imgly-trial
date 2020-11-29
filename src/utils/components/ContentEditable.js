@@ -20,7 +20,7 @@ function ContentEditable ({input, text, ranges, replaceRange, selection}) {
         chunk = '';
       }
     }
-    chunk && res.push(chunk);
+    chunk && res.push("w"+chunk);
     return res;
   };
   

@@ -74,7 +74,7 @@ function Editor() {
       acc[key] = true;
       return acc;
     },{}))
-  },[])
+  },[ranges])
 
   const replaceRange = useCallback(({ target }) => {
     let i = getCaretPosition(input.current) - 1;
@@ -86,7 +86,7 @@ function Editor() {
       return ranges;
     })
     text.current = input.current.innerText;
-  },[])
+  },[ranges])
 
   return (
     <>
