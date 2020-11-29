@@ -1,5 +1,5 @@
 import './App.css';
-import Editor from './utils/components/Editor';
+import Editor from './components/Editor';
 
 function App() {
 
